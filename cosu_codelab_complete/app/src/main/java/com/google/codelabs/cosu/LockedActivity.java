@@ -32,7 +32,7 @@ import android.widget.Toast;
 
 public class LockedActivity extends Activity {
 
-    private ComponentName mAdminComponentName;
+    private ComponentName componentName;
     private DevicePolicyManager mDevicePolicyManager;
     private PackageManager mPackageManager;
 
@@ -62,7 +62,7 @@ public class LockedActivity extends Activity {
         });
 
         // Set Default COSU policy
-        mAdminComponentName = DeviceAdminReceiver.getComponentName(this);
+        componentName = new ComponentName(this, AdminReceiver.class);
         mDevicePolicyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
         mPackageManager = getPackageManager();
         if (mDevicePolicyManager.isDeviceOwnerApp(getPackageName())) {
@@ -78,7 +78,6 @@ public class LockedActivity extends Activity {
     protected void onStart() {
         super.onStart();
 
-        startLockTask();
         // start lock task mode if its not already active
         if (mDevicePolicyManager.isLockTaskPermitted(this.getPackageName())) {
             ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
@@ -97,21 +96,21 @@ public class LockedActivity extends Activity {
         setUserRestriction(UserManager.DISALLOW_ADJUST_VOLUME, active);
 
         // disable keyguard and status bar
-        mDevicePolicyManager.setKeyguardDisabled(mAdminComponentName, active);
-        mDevicePolicyManager.setStatusBarDisabled(mAdminComponentName, active);
+        mDevicePolicyManager.setKeyguardDisabled(componentName, active);
+        mDevicePolicyManager.setStatusBarDisabled(componentName, active);
 
         // enable STAY_ON_WHILE_PLUGGED_IN
         enableStayOnWhilePluggedIn(active);
 
         // set system update policy
         if (active) {
-            mDevicePolicyManager.setSystemUpdatePolicy(mAdminComponentName, SystemUpdatePolicy.createWindowedInstallPolicy(60, 120));
+            mDevicePolicyManager.setSystemUpdatePolicy(componentName, SystemUpdatePolicy.createWindowedInstallPolicy(60, 120));
         } else {
-            mDevicePolicyManager.setSystemUpdatePolicy(mAdminComponentName, null);
+            mDevicePolicyManager.setSystemUpdatePolicy(componentName, null);
         }
 
         // set this Activity as a lock task package
-        mDevicePolicyManager.setLockTaskPackages(mAdminComponentName, active ? new String[]{getPackageName()} : new String[]{});
+        mDevicePolicyManager.setLockTaskPackages(componentName, active ? new String[]{getPackageName()} : new String[]{});
 
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_MAIN);
         intentFilter.addCategory(Intent.CATEGORY_HOME);
@@ -120,31 +119,31 @@ public class LockedActivity extends Activity {
         if (active) {
             // set Cosu activity as home intent receiver so that it is started on reboot
             mDevicePolicyManager.addPersistentPreferredActivity(
-                    mAdminComponentName, intentFilter, new ComponentName(
+                    componentName, intentFilter, new ComponentName(
                             getPackageName(), LockedActivity.class.getName()));
         } else {
-            mDevicePolicyManager.clearPackagePersistentPreferredActivities(mAdminComponentName, getPackageName());
+            mDevicePolicyManager.clearPackagePersistentPreferredActivities(componentName, getPackageName());
         }
     }
 
     private void setUserRestriction(String restriction, boolean disallow) {
         if (disallow) {
-            mDevicePolicyManager.addUserRestriction(mAdminComponentName, restriction);
+            mDevicePolicyManager.addUserRestriction(componentName, restriction);
         } else {
-            mDevicePolicyManager.clearUserRestriction(mAdminComponentName, restriction);
+            mDevicePolicyManager.clearUserRestriction(componentName, restriction);
         }
     }
 
     private void enableStayOnWhilePluggedIn(boolean enabled) {
         if (enabled) {
             mDevicePolicyManager.setGlobalSetting(
-                    mAdminComponentName,
+                    componentName,
                     Settings.Global.STAY_ON_WHILE_PLUGGED_IN,
                     Integer.toString(BatteryManager.BATTERY_PLUGGED_AC
                             | BatteryManager.BATTERY_PLUGGED_USB
                             | BatteryManager.BATTERY_PLUGGED_WIRELESS));
         } else {
-            mDevicePolicyManager.setGlobalSetting(mAdminComponentName, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, "0");
+            mDevicePolicyManager.setGlobalSetting(componentName, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, "0");
         }
     }
 }

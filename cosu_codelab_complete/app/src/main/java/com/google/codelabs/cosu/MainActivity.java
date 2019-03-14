@@ -15,59 +15,68 @@
 package com.google.codelabs.cosu;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.UserManager;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
-    private PackageManager mPackageManager;
+    //adb shell dpm set-device-owner com.google.codelabs.cosu/.AdminReceiver
 
-    private DevicePolicyManager mDevicePolicyManager;
-    private ComponentName mAdminComponentName;
+    private static final int RESULT_ENABLE = 11;
+
+    private PackageManager mPackageManager;
+    private DevicePolicyManager devicePolicyManager;
+    private ActivityManager activityManager;
+    private ComponentName componentName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDevicePolicyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-
-        mAdminComponentName = DeviceAdminReceiver.getComponentName(this);
+        devicePolicyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+        activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        componentName = new ComponentName(getApplicationContext(), AdminReceiver.class);
 
         mPackageManager = getPackageManager();
 
         findViewById(R.id.start_lock_button).setOnClickListener(v -> {
-//            if (mDevicePolicyManager.isDeviceOwnerApp(getApplicationContext().getPackageName())) {
-            Intent lockIntent = new Intent(getApplicationContext(), LockedActivity.class);
+            if (devicePolicyManager.isDeviceOwnerApp(getApplicationContext().getPackageName())) {
+                Intent lockIntent = new Intent(MainActivity.this, LockedActivity.class);
 
-            mPackageManager.setComponentEnabledSetting(
-                    new ComponentName(getApplicationContext(),
-                            LockedActivity.class),
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP);
-            startActivity(lockIntent);
-            finish();
-//            } else {
-//                Toast.makeText(getApplicationContext(),
-//                        R.string.not_lock_whitelisted, Toast.LENGTH_SHORT)
-//                        .show();
-//            }
+                mPackageManager.setComponentEnabledSetting(
+                        componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                        PackageManager.DONT_KILL_APP);
+                startActivity(lockIntent);
+                finish();
+            } else {
+                Toast.makeText(getApplicationContext(), R.string.not_lock_whitelisted, Toast.LENGTH_SHORT).show();
+            }
+
+            devicePolicyManager.addUserRestriction(componentName, UserManager.DISALLOW_ADJUST_VOLUME);
         });
 
-        // Check to see if started by LockActivity and disable LockActivity if so
+        findViewById(R.id.get_admin_button).setOnClickListener(v -> {
+                    Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName);
+                    intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Разрешение на изменение системных клавиш");
+                    startActivityForResult(intent, RESULT_ENABLE);
+                }
+        );
 
-        Intent intent = getIntent();
-
-        if (intent.getIntExtra(LockedActivity.LOCK_ACTIVITY_KEY, 0) == LockedActivity.FROM_LOCK_ACTIVITY) {
-            mDevicePolicyManager.clearPackagePersistentPreferredActivities(mAdminComponentName, getPackageName());
-            mPackageManager.setComponentEnabledSetting(
-                    new ComponentName(getApplicationContext(), LockedActivity.class),
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP);
-        }
+//        devicePolicyManager.setDeviceOwnerLockScreenInfo(componentName, "AdminReceiver is owner");
+//        devicePolicyManager.clearPackagePersistentPreferredActivities(componentName, getPackageName());
+//        mPackageManager.setComponentEnabledSetting(
+//                new ComponentName(getApplicationContext(), LockedActivity.class),
+//                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+//                PackageManager.DONT_KILL_APP);
     }
 }
