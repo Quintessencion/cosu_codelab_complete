@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         // Setup button which calls intent to camera app to take a picture
-        takePicButton = (Button) findViewById(R.id.pic_button);
+        takePicButton = findViewById(R.id.pic_button);
         takePicButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,26 +95,26 @@ public class MainActivity extends Activity {
         mDevicePolicyManager = (DevicePolicyManager)
                 getSystemService(Context.DEVICE_POLICY_SERVICE);
 
-        lockTaskButton = (Button) findViewById(R.id.start_lock_button);
+        lockTaskButton = findViewById(R.id.start_lock_button);
         lockTaskButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if ( mDevicePolicyManager.isLockTaskPermitted(
-                        getApplicationContext().getPackageName())) {
+//                if ( mDevicePolicyManager.isLockTaskPermitted(
+//                        getApplicationContext().getPackageName())) {
                     Intent lockIntent = new Intent(getApplicationContext(),
                             LockedActivity.class);
                     lockIntent.putExtra(EXTRA_FILEPATH,mCurrentPhotoPath);
                     startActivity(lockIntent);
                     finish();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            R.string.not_lock_whitelisted,Toast.LENGTH_SHORT)
-                            .show();
-                }
+//                } else {
+//                    Toast.makeText(getApplicationContext(),
+//                            R.string.not_lock_whitelisted,Toast.LENGTH_SHORT)
+//                            .show();
+//                }
             }
         });
 
-        imageView = (ImageView) findViewById(R.id.main_imageView);
+        imageView = findViewById(R.id.main_imageView);
 
         // Check to see if permission to access external storage is granted,
         // and request if not

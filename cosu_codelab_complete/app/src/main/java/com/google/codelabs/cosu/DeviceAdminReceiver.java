@@ -20,6 +20,8 @@ package com.google.codelabs.cosu;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
 
 /**
  * Handles events related to the managed profile.
@@ -33,5 +35,10 @@ public class DeviceAdminReceiver extends android.app.admin.DeviceAdminReceiver {
      */
     public static ComponentName getComponentName(Context context) {
         return new ComponentName(context.getApplicationContext(), DeviceAdminReceiver.class);
+    }
+
+    @Override
+    public void onEnabled(Context context, Intent intent) {
+        Toast.makeText(context, "Enable", Toast.LENGTH_SHORT).show();
     }
 }
